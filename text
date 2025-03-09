@@ -1,0 +1,55 @@
+exports.login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const userExists = await userModel.findOne({ email: email.toLowerCase() });
+        if (userExists === null) {
+            return res.status(404).json({
+                message: `User with email: ${email} does not exist`
+            });
+        }
+        const isCorrectPassword = await bcrypt.compare(password, userExists.password);
+        if (isCorrectPassword === false) {
+            return res.status(400).json({
+                message: "Incorrect Password"
+            });
+        }
+        console.log(userExists)
+        if (userExists.isVerified === false) {
+            return res.status(400).json({
+                message: "User not verified, Please check your email to verify"
+            });
+        }
+        const token = await jwt.sign({ userId: userExists._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        res.status(200).json({
+            message: 'Login successful',
+            data: userExists,
+            token
+        });
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({
+            message: 'Error Logging in User'
+        });
+    }
+};
+
+
+
+
+exports.getAllUser = async (req, res) =>{
+    try {
+
+        const allUser = await userModel.find()
+
+        res.status(200).json({
+            message: 'kindly find below all registered users', 
+            data: allUser})
+
+    } catch (error) {
+        res.status(500).json({
+            message: 'internal server error: ' + error.message
+    })
+    
+    }
+
+};

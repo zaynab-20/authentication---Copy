@@ -12,6 +12,7 @@ app.use(express.json())
 app.use('/api/v1', userRouter)
 
 
+
 app.listen(PORT, ()=>{
       console.log(`server is running on port ${PORT}`);
       

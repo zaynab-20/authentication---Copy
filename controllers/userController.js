@@ -3,11 +3,17 @@ const bcrypt = require('bcrypt');
 const sendEmail = require('../middleWare/nodemailer');
 const jwt = require('jsonwebtoken');
 const signUpTemplate = require('../utils/mailTemplate');
+const { registerSchema, loginSchema } = require('../validation/user');
+const { validate } = require('../helper/utilities');
 
 exports.register = async (req, res) =>{
     try {
         // extract the required field from the request body
-        const { fullName, gender,email, passWord, username} = req.body;
+        // const { fullName, gender,email, passWord, username} = req.body;
+
+        const validated = await validate (req.body,registerSchema)
+
+        const {fullName, email, passWord, gender, username} = validated
         
         const user = await userModel.findOne({ email: email.toLowerCase () });
         if (user) {
@@ -33,7 +39,7 @@ exports.register = async (req, res) =>{
         })
 
         const token = await jwt.sign({userId: newUser._id},
-            process.env.JWT_SECRET, { expiresIn: '10mins'}
+            process.env.JWT_SECRET, { expiresIn: '10h'}
         )
         const link = `${req.protocol}://${req.get('host')}/api/v1/user-verify/${token}`
 
@@ -59,7 +65,8 @@ exports.register = async (req, res) =>{
         console.log(error.message);
         
         res.status(500).json({
-            message: 'error registering user'
+            message: 'error registering user',
+            error: error.message
         })
     }
 };
@@ -145,12 +152,16 @@ exports.resendVerificationEmail =  async (req, res) => {
 
 exports.login = async (req, res) =>{
     try {
-        const {email,username, passWord} = req.body;
+        // const {email,username, passWord} = req.body;
+        const validated = await validate (req.body,loginSchema)
+
+        const {email, passWord} = validated
+        
 
         if (!email && !username) {
             return res.status(404).json({
                 message: 'please enter either email or username'
-            });
+            })
         }
         if (!passWord) {
             return res.status(404).json({
@@ -190,7 +201,8 @@ exports.login = async (req, res) =>{
         console.log(error.message);
         
         res.status(500).json({
-            message: 'internal server error'
+            message: 'internal server error',
+            error: error.message
         })
     }
 };
